@@ -4,13 +4,14 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { PBRMaterial } from './render/material/PBRMaterial';
 import Program from './render/material/Program';
 import {Environment} from './render/environment/Environment'
+import { isMobile } from './Utils';
 // function
 function loadEnvMap(envMapName = 'Alexs') {
   const envMapSrc = `${'./render/environment/envMap/'}${envMapName}/`;
-  return new Environment(this).loadPackage(envMapSrc);
+  return new Environment(renderer, isMobile).loadPackage(envMapSrc);
 }
 // Setup
-let environment = loadEnvMap();
+
 const scene = new THREE.Scene();
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -25,7 +26,7 @@ camera.position.setZ(30);
 camera.position.setX(-3);
 
 renderer.render(scene, camera);
-
+let environment = await loadEnvMap();
 // Torus
 
 const geometry = new THREE.TorusGeometry(10, 3, 16, 100);
@@ -79,12 +80,14 @@ const jeff = new THREE.Mesh(new THREE.BoxGeometry(3, 3, 3), new THREE.MeshBasicM
 scene.add(jeff);
 
 // Moon
+// Load Light
+let sunLight = new THREE.DirectionalLight(0xffffff, 1);
 // Load Shader
 let program = new Program();
 let { pbrVS, pbrFS } = program.getPBRShader();
 let shadowDepthRange = new THREE.Vector2(
-  this.sunLight.shadow.camera.near,
-  this.sunLight.shadow.camera.far
+  sunLight.shadow.camera.near,
+  sunLight.shadow.camera.far
 );
 
 const moonTexture = new THREE.TextureLoader().load('T_Treant_Diffuse_Summer.png');
@@ -105,7 +108,12 @@ moon.material = new PBRMaterial(moon, environment, {
   pbrFS,
   shadowDepthRange
 });
-
+let envRotation = 0;
+let envRotationFromPanel = new THREE.Matrix4().makeRotationY(envRotation);
+let envRotationMat4 = new THREE.Matrix4().copy(envRotationFromPanel);
+moon.material.uniforms.uEnvironmentTransform = { value: new THREE.Matrix3().setFromMatrix4(envRotationMat4) };
+moon.material.uniforms.uEnvBrightness = { value: 1.0 };
+//moon.material.envMap = null;
 scene.add(moon);
 
 moon.position.z = 30;

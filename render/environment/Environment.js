@@ -6,11 +6,11 @@ import EnvironmentPanorama from './EnvironmentPanorama';
 import IntegrateBRDFMap from './IntegrateBRDFMap';
 import EnvironmentSphericalHarmonics from './EnvironmentSphericalHarmonics';
 
-const brdfLUTPath = './assets/envMap/brdf_ue4.bin.gz';
+const brdfLUTPath = './render/environment/envMap/brdf_ue4.bin.gz';
 
 class Environment {
-	constructor(viewer) {
-		let { renderer, isMobile } = viewer;
+	constructor(renderer, isMobile) {
+		this.renderer = renderer;
 		this.isMobile = isMobile;
 		let ctx = renderer.getContext();
 		this.textureLODSupport = ctx.getExtension('EXT_shader_texture_lod');

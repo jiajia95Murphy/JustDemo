@@ -153,7 +153,7 @@ void main(){
     // IBL
     float NoV = dot(bentAnisotropicNormal, viewDir);
     vec3 transformedNormal = uEnvironmentTransform * bentAnisotropicNormal;
-    vec3 diffuseIBL = new vec3(0.1, 0.1, 0.1);//materialDiffuse * computeDiffuseSPH(transformedNormal, uEnvironmentSphericalHarmonics);
+    vec3 diffuseIBL = materialDiffuse * computeDiffuseSPH(transformedNormal, uEnvironmentSphericalHarmonics);
     vec3 specularDFG = integrateBRDF(materialSpecular, materialRoughness, NoV);
     vec3 specularIBL = computeIBLSpecularUE4(specularDFG, bentAnisotropicNormal, viewDir, materialRoughness);
     
