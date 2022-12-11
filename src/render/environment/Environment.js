@@ -6,7 +6,7 @@ import EnvironmentPanorama from './EnvironmentPanorama';
 import IntegrateBRDFMap from './IntegrateBRDFMap';
 import EnvironmentSphericalHarmonics from './EnvironmentSphericalHarmonics';
 
-const brdfLUTPath = './render/environment/envMap/brdf_ue4.bin.gz';
+const brdfLUTPath = './src/render/environment/envMap/brdf_ue4.bin.gz';
 
 class Environment {
 	constructor(renderer, isMobile) {
