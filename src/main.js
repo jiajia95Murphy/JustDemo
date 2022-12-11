@@ -7,7 +7,7 @@ import {Environment} from './render/environment/Environment'
 import { isMobile } from './Utils';
 // function
 function loadEnvMap(envMapName = 'Alexs') {
-  const envMapSrc = `${'./render/environment/envMap/'}${envMapName}/`;
+  const envMapSrc = `${'./src/render/environment/envMap/'}${envMapName}/`;
   return new Environment(renderer, isMobile).loadPackage(envMapSrc);
 }
 // Setup
@@ -68,12 +68,12 @@ Array(200).fill().forEach(addStar);
 
 // Background
 
-const spaceTexture = new THREE.TextureLoader().load('space.jpg');
+const spaceTexture = new THREE.TextureLoader().load('./src/space.jpg');
 scene.background = spaceTexture;
 
 // Avatar
 
-const jeffTexture = new THREE.TextureLoader().load('jeff.png');
+const jeffTexture = new THREE.TextureLoader().load('./src/jeff.png');
 
 const jeff = new THREE.Mesh(new THREE.BoxGeometry(3, 3, 3), new THREE.MeshBasicMaterial({ map: jeffTexture }));
 
@@ -90,9 +90,9 @@ let shadowDepthRange = new THREE.Vector2(
   sunLight.shadow.camera.far
 );
 
-const moonTexture = new THREE.TextureLoader().load('T_Treant_Diffuse_Summer.png');
-const normalTexture = new THREE.TextureLoader().load('T_Treant_Normal.png');
-const emissiveTexture = new THREE.TextureLoader().load('T_Treant_Emissive.png');
+const moonTexture = new THREE.TextureLoader().load('./src/T_Treant_Diffuse_Summer.png');
+const normalTexture = new THREE.TextureLoader().load('./src/T_Treant_Normal.png');
+const emissiveTexture = new THREE.TextureLoader().load('./src/T_Treant_Emissive.png');
 
 const moon = new THREE.Mesh(
   new THREE.SphereGeometry(3, 32, 32),
