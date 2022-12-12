@@ -26,7 +26,7 @@ camera.position.setZ(30);
 camera.position.setX(-3);
 
 renderer.render(scene, camera);
-let environment = await loadEnvMap();
+//let environment = await loadEnvMap();
 // Torus
 
 const geometry = new THREE.TorusGeometry(10, 3, 16, 100);
@@ -68,12 +68,12 @@ Array(200).fill().forEach(addStar);
 
 // Background
 
-const spaceTexture = new THREE.TextureLoader().load('./src/space.jpg');
+const spaceTexture = new THREE.TextureLoader().load('./src/render/texture/space.jpg');
 scene.background = spaceTexture;
 
 // Avatar
 
-const jeffTexture = new THREE.TextureLoader().load('./src/jeff.png');
+const jeffTexture = new THREE.TextureLoader().load('./src/render/texture/jeff.png');
 
 const jeff = new THREE.Mesh(new THREE.BoxGeometry(3, 3, 3), new THREE.MeshBasicMaterial({ map: jeffTexture }));
 
@@ -90,29 +90,32 @@ let shadowDepthRange = new THREE.Vector2(
   sunLight.shadow.camera.far
 );
 
-const moonTexture = new THREE.TextureLoader().load('./src/T_Treant_Diffuse_Summer.png');
-const normalTexture = new THREE.TextureLoader().load('./src/T_Treant_Normal.png');
-const emissiveTexture = new THREE.TextureLoader().load('./src/T_Treant_Emissive.png');
-
+const moonTexture = new THREE.TextureLoader().load('./src/render/texture/T_Treant_Diffuse_Summer.png');
+const normalTexture = new THREE.TextureLoader().load('./src/render/texture/T_Treant_Normal.png');
+const emissiveTexture = new THREE.TextureLoader().load('./src/render/texture/T_Treant_Emissive.png');
+const metalnessTexture = new THREE.TextureLoader().load('./src/render/texture/FlightHelmet_Materials_RubberWoodMat_OcclusionRoughMetal.png');
 const moon = new THREE.Mesh(
   new THREE.SphereGeometry(3, 32, 32),
   new THREE.MeshStandardMaterial({
     map: moonTexture,
     normalMap: normalTexture,
     emissiveMap: emissiveTexture,
+    metalnessMap: metalnessTexture
   })
 );
 
-moon.material = new PBRMaterial(moon, environment, {
+moon.material = new PBRMaterial(moon, null, {
   pbrVS,
   pbrFS,
-  shadowDepthRange
+  //shadowDepthRange
 });
 let envRotation = 0;
 let envRotationFromPanel = new THREE.Matrix4().makeRotationY(envRotation);
 let envRotationMat4 = new THREE.Matrix4().copy(envRotationFromPanel);
 moon.material.uniforms.uEnvironmentTransform = { value: new THREE.Matrix3().setFromMatrix4(envRotationMat4) };
 moon.material.uniforms.uEnvBrightness = { value: 1.0 };
+moon.material.defines['DEBUG_BASECOLOR'] = 1;
+moon.material.defines[`DEBUG_METALLIC`] = 0;
 //moon.material.envMap = null;
 scene.add(moon);
 

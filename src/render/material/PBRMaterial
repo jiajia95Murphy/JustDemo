@@ -27,14 +27,14 @@ class PBRMaterial extends THREE.ShaderMaterial {
 			UniformsLib.aomap,
 			UniformsLib.emissivemap,
 			UniformsLib.displacementmap,
-			UniformsLib.envmap,
+			//UniformsLib.envmap,
 			UniformsLib.fog,
 			UniformsLib.lights,
 			pbrDefaultUniforms
 		]);
 		this.uniforms['uShadowDepthRange'] = { value: shaderData.shadowDepthRange };
 		this.uniforms['uModelNormalMatrix'] = { value: this.modelNormalMatrix };
-        this.syncEnvSetting(environment);
+        //this.syncEnvSetting(environment);
 		// PBR param sync
 		this.syncParam(sourceMaterial);
 

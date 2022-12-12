@@ -276,6 +276,17 @@ void main(){
     vec3 totalResult = resultDiffuse + resultSpecular + totalEmissiveRadiance + resultLightClearCoat;
     vec4 frag = vec4(totalResult, diffuseColor.a);
     gl_FragColor = frag;
-    #include <tonemapping_fragment>
-    #include <encodings_fragment>
+#if defined(DEBUG_BASECOLOR)
+    gl_FragColor = diffuseColor;
+#endif
+#if defined(DEBUG_METALLIC)
+    gl_FragColor = vec4(texelMetalness.g, texelMetalness.g, texelMetalness.g, 1.0);
+#endif
+    //#include <tonemapping_fragment>
+    
+    
+    #if defined(DEBUG_ROUGHNESS)
+    gl_FragColor = diffuseColor;
+#endif
+    //#include <encodings_fragment>
 }

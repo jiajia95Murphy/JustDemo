@@ -32,10 +32,12 @@ vec3 prefilterEnvMap(float rLinear, vec3 R) {
     if (absDir.x != M) dir.x *= scale;
     if (absDir.y != M) dir.y *= scale;
     if (absDir.z != M) dir.z *= scale;
-	return LogLuvToLinear(textureCubeLodEXT(envMap, dir, lod)).rgb;
+	//return LogLuvToLinear(textureCubeLodEXT(envMap, dir, lod)).rgb;
+    return vec3(0, 0, 0);
 #else
-    return LogLuvToLinear(texturePanoramaLod(envMap, uEnvironmentSize, R, lod, uEnvironmentLodRange[0])).rgb;
-	#endif
+    //return LogLuvToLinear(texturePanoramaLod(envMap, uEnvironmentSize, R, lod, uEnvironmentLodRange[0])).rgb;
+	return vec3(0, 0, 0);
+    #endif
 }
 
 // Anisotropic
@@ -68,10 +70,10 @@ vec3 getPrefilteredEnvMapColor(vec3 normal, vec3 viewDir, float roughness) {
     vec3 dominantR = getSpecularDominantDir(normal, R, roughness * roughness);
     vec3 dir = uEnvironmentTransform * dominantR;
     vec3 prefilteredColor = prefilterEnvMap(roughness, dir);
-
     return prefilteredColor;
 }
 
 vec3 computeIBLSpecularUE4(vec3 specularDFG, vec3 normal, vec3 viewDir, float roughness) {
     return getPrefilteredEnvMapColor(normal, viewDir, roughness) * specularDFG;
+    //return vec3(0, 0, 0);
 }
