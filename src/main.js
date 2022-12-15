@@ -1,12 +1,13 @@
 import './style.css';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
 import { PBRMaterial } from './render/material/PBRMaterial';
 import Program from './render/material/Program';
 import {Environment} from './render/environment/Environment'
 import { isMobile } from './Utils';
 // function
-function loadEnvMap(envMapName = 'Alexs') {
+/* function loadEnvMap(envMapName = 'Alexs') {
   const envMapSrc = `${'./src/render/environment/envMap/'}${envMapName}/`;
   return new Environment(renderer, isMobile).loadPackage(envMapSrc);
 }
@@ -19,7 +20,7 @@ const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerH
 const renderer = new THREE.WebGLRenderer({
   canvas: document.querySelector('#bg'),
 });
-
+document.body.appendChild(renderer.domElement);
 renderer.setPixelRatio(window.devicePixelRatio);
 renderer.setSize(window.innerWidth, window.innerHeight);
 camera.position.setZ(30);
@@ -49,7 +50,9 @@ scene.add(pointLight, ambientLight);
 // const gridHelper = new THREE.GridHelper(200, 50);
 // scene.add(lightHelper, gridHelper)
 
-// const controls = new OrbitControls(camera, renderer.domElement);
+const controls = new OrbitControls(camera, renderer.domElement);
+camera.position.set( 0, 20, 100 );
+controls.update();
 
 function addStar() {
   const geometry = new THREE.SphereGeometry(0.25, 24, 24);
@@ -82,6 +85,7 @@ scene.add(jeff);
 // Moon
 // Load Light
 let sunLight = new THREE.DirectionalLight(0xffffff, 1);
+sunLight.castShadow = true;
 // Load Shader
 let program = new Program();
 let { pbrVS, pbrFS } = program.getPBRShader();
@@ -94,6 +98,7 @@ const moonTexture = new THREE.TextureLoader().load('./src/render/texture/T_Trean
 const normalTexture = new THREE.TextureLoader().load('./src/render/texture/T_Treant_Normal.png');
 const emissiveTexture = new THREE.TextureLoader().load('./src/render/texture/T_Treant_Emissive.png');
 const metalnessTexture = new THREE.TextureLoader().load('./src/render/texture/FlightHelmet_Materials_RubberWoodMat_OcclusionRoughMetal.png');
+const envTexture = new THREE.TextureLoader().load('');
 const moon = new THREE.Mesh(
   new THREE.SphereGeometry(3, 32, 32),
   new THREE.MeshStandardMaterial({
@@ -125,6 +130,17 @@ moon.position.setX(-10);
 jeff.position.z = -5;
 jeff.position.x = 2;
 
+// Shadow Plane
+const planeGeometry = new THREE.PlaneGeometry( 2000, 2000 );
+				planeGeometry.rotateX( - Math.PI / 2 );
+				const planeMaterial = new THREE.ShadowMaterial( { color: 0x000000, opacity: 0.2 } );
+
+				const plane = new THREE.Mesh( planeGeometry, planeMaterial );
+				plane.position.z = 30;
+        plane.position.setX(-10);
+				plane.receiveShadow = true;
+				scene.add( plane );
+
 // Scroll Animation
 
 function moveCamera() {
@@ -141,8 +157,8 @@ function moveCamera() {
   camera.rotation.y = t * -0.0002;
 }
 
-document.body.onscroll = moveCamera;
-moveCamera();
+//document.body.onscroll = moveCamera;
+//moveCamera();
 
 // Animation Loop
 
@@ -155,9 +171,164 @@ function animate() {
 
   moon.rotation.x += 0.005;
 
-  // controls.update();
+  controls.update();
 
   renderer.render(scene, camera);
 }
 
+animate(); */
+let camera, controls, scene, renderer;
+
+init();
+//render(); // remove when using next line for animation loop (requestAnimationFrame)
 animate();
+
+function init() {
+
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color( 0xcccccc );
+  //scene.fog = new THREE.FogExp2( 0xcccccc, 0.002 );
+
+  renderer = new THREE.WebGLRenderer( { antialias: true } );
+  renderer.setPixelRatio( window.devicePixelRatio );
+  renderer.setSize( window.innerWidth, window.innerHeight );
+  renderer.shadowMap.enabled = true;
+  document.body.appendChild( renderer.domElement );
+
+  camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 1000 );
+  camera.position.set( 400, 200, 0 );
+
+  // controls
+
+  controls = new OrbitControls( camera, renderer.domElement );
+  controls.listenToKeyEvents( window ); // optional
+
+  //controls.addEventListener( 'change', render ); // call this only in static scenes (i.e., if there is no animation loop)
+
+  controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
+  controls.dampingFactor = 0.05;
+  controls.enableZoom = true;
+  controls.screenSpacePanning = false;
+
+  controls.minDistance = 100;
+  controls.maxDistance = 500;
+
+  controls.maxPolarAngle = Math.PI / 2;
+
+  // world
+// Moon
+// Load Light
+let sunLight = new THREE.DirectionalLight(0xffffff, 1);
+sunLight.castShadow = true;
+// Load Shader
+let program = new Program();
+let { pbrVS, pbrFS } = program.getPBRShader();
+let shadowDepthRange = new THREE.Vector2(
+  sunLight.shadow.camera.near,
+  sunLight.shadow.camera.far
+);
+
+const moonTexture = new THREE.TextureLoader().load('./src/render/texture/T_Treant_Diffuse_Summer.png');
+const normalTexture = new THREE.TextureLoader().load('./src/render/texture/T_Treant_Normal.png');
+const emissiveTexture = new THREE.TextureLoader().load('./src/render/texture/T_Treant_Emissive.png');
+const metalnessTexture = new THREE.TextureLoader().load('./src/render/texture/FlightHelmet_Materials_RubberWoodMat_OcclusionRoughMetal.png');
+const envTexture = new THREE.TextureLoader().load('');
+const moon = new THREE.Mesh(
+  new THREE.SphereGeometry(30, 32, 32),
+  new THREE.MeshStandardMaterial({
+    /* map: moonTexture,
+    normalMap: normalTexture,
+    emissiveMap: emissiveTexture,
+    metalnessMap: metalnessTexture */
+  })
+);
+moon.castShadow = true;
+
+/* moon.material = new PBRMaterial(moon, null, {
+  pbrVS,
+  pbrFS,
+  //shadowDepthRange
+}); */
+/* let envRotation = 0;
+let envRotationFromPanel = new THREE.Matrix4().makeRotationY(envRotation);
+let envRotationMat4 = new THREE.Matrix4().copy(envRotationFromPanel);
+moon.material.uniforms.uEnvironmentTransform = { value: new THREE.Matrix3().setFromMatrix4(envRotationMat4) };
+moon.material.uniforms.uEnvBrightness = { value: 1.0 };
+moon.material.defines['DEBUG_BASECOLOR'] = 1;
+moon.material.defines[`DEBUG_METALLIC`] = 0; */
+//moon.material.envMap = null;
+scene.add(moon);
+
+  // lights
+
+  const dirLight1 = new THREE.DirectionalLight( 0xffffff, 1);
+  dirLight1.target.position.set(0, -30, 30);
+  //dirLight1.angle = Math.PI * 0.1;
+  dirLight1.castShadow = true;
+  dirLight1.position.set( 100, 100, 0);
+  //dirLight1.rotateX(30);
+  dirLight1.shadow.camera.near = 0.1;
+  dirLight1.shadow.camera.far = 2000;
+  dirLight1.shadow.bias = - 0.000222;
+  dirLight1.shadow.mapSize.width = 1024;
+  dirLight1.shadow.mapSize.height = 1024;
+  scene.add( dirLight1 );
+  scene.add(dirLight1.target);
+  const dirHelper = new THREE.DirectionalLightHelper( dirLight1, 5 );
+  scene.add( dirHelper );
+
+  const spotLight1 = new THREE.SpotLight( 0xff00ff, 1);
+  spotLight1.target.position.set(0, 0, 0);
+  spotLight1.angle = Math.PI * 0.1;
+  spotLight1.castShadow = true;
+  spotLight1.position.set( -100, 100, 0);
+  spotLight1.shadow.camera.near = 2;
+  spotLight1.shadow.camera.far = 2000;
+  spotLight1.shadow.bias = - 0.000222;
+  spotLight1.shadow.mapSize.width = 1024;
+  spotLight1.shadow.mapSize.height = 1024;
+  scene.add( spotLight1 );
+  scene.add(spotLight1.target);
+  const spotHelper = new THREE.SpotLightHelper( spotLight1, 5 );
+  scene.add( spotHelper );
+
+// Shadow Plane
+const planeGeometry = new THREE.PlaneGeometry( 2000, 2000 );
+				planeGeometry.rotateX( - Math.PI / 2 );
+				const planeMaterial = new THREE.ShadowMaterial( { color: 0x000000, opacity: 0.2 } );
+
+				const plane = new THREE.Mesh( planeGeometry, planeMaterial);
+				plane.position.z = 30;
+        plane.position.setX(0);
+        plane.position.y = -30;
+				plane.receiveShadow = true;
+				scene.add( plane );
+
+  window.addEventListener( 'resize', onWindowResize );
+
+}
+
+function onWindowResize() {
+
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+
+  renderer.setSize( window.innerWidth, window.innerHeight );
+
+}
+
+function animate() {
+
+  requestAnimationFrame( animate );
+
+  controls.update(); // only required if controls.enableDamping = true, or if controls.autoRotate = true
+
+  render();
+
+}
+
+function render() {
+
+  renderer.render( scene, camera );
+
+}

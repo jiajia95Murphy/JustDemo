@@ -20,7 +20,7 @@ canvas {
 main {
   width: 100vw;
   color: white;
-  z-index: 99;
+  z-index: 0;
   position: absolute;
   width: 100%;
   margin: 0px auto;

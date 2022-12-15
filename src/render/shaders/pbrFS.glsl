@@ -281,12 +281,10 @@ void main(){
 #endif
 #if defined(DEBUG_METALLIC)
     gl_FragColor = vec4(texelMetalness.g, texelMetalness.g, texelMetalness.g, 1.0);
-#endif
-    //#include <tonemapping_fragment>
-    
-    
-    #if defined(DEBUG_ROUGHNESS)
+#endif    
+#if defined(DEBUG_ROUGHNESS)
     gl_FragColor = diffuseColor;
 #endif
+    //#include <tonemapping_fragment>
     //#include <encodings_fragment>
 }
