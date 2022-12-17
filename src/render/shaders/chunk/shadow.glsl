@@ -2,15 +2,16 @@
 uniform bool receiveShadow;
 #ifdef USE_SHADOWMAP
 	#if NUM_DIR_LIGHT_SHADOWS > 0
-        struct DirectionalLightShadow {
-			float shadowBias;
-			float shadowRadius;
-			vec2 shadowMapSize;
-		};
-        uniform DirectionalLightShadow directionalLightShadows[ NUM_DIR_LIGHT_SHADOWS ];
+        //struct DirectionalLightShadow {
+		//	float shadowBias;
+        //    float shadowNormalBias;
+		//	float shadowRadius;
+		//	vec2 shadowMapSize;
+		//};
+        //uniform DirectionalLightShadow directionalLightShadows[ NUM_DIR_LIGHT_SHADOWS ];
         
-		uniform sampler2D directionalShadowMap[ NUM_DIR_LIGHT_SHADOWS ];
-		varying vec4 vDirectionalShadowCoord[ NUM_DIR_LIGHT_SHADOWS ];
+		//uniform sampler2D directionalShadowMap[ NUM_DIR_LIGHT_SHADOWS ];
+		//varying vec4 vDirectionalShadowCoord[ NUM_DIR_LIGHT_SHADOWS ];
 	#endif
 	
 	float texture2DShadowLerp( sampler2D depths, vec2 size, vec2 uv, float compare, float shadowDistance) {
@@ -41,6 +42,7 @@ uniform bool receiveShadow;
 	}
 
 	float getShadow(bool lighted, sampler2D shadowMap, vec2 shadowMapSize, float shadowBias, float shadowRadius, vec4 shadowCoord, out float shadowDistance ) {
+
         bool earlyOut = false;
         float shadow = 1.0;
 

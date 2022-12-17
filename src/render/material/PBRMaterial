@@ -20,7 +20,7 @@ class PBRMaterial extends THREE.ShaderMaterial {
 		this.uniforms = THREE.UniformsUtils.merge([
 			UniformsLib.common,
 			UniformsLib.normalmap,
-			UniformsLib.lightmap,
+			//UniformsLib.lightmap,
 			UniformsLib.bumpmap,
 			UniformsLib.roughnessmap,
 			UniformsLib.metalnessmap,
@@ -29,7 +29,7 @@ class PBRMaterial extends THREE.ShaderMaterial {
 			UniformsLib.displacementmap,
 			//UniformsLib.envmap,
 			UniformsLib.fog,
-			UniformsLib.lights,
+			//UniformsLib.lights,
 			pbrDefaultUniforms
 		]);
 		this.uniforms['uShadowDepthRange'] = { value: shaderData.shadowDepthRange };
@@ -40,7 +40,7 @@ class PBRMaterial extends THREE.ShaderMaterial {
 
 		this.vertexShader = shaderData.pbrVS;
 		this.fragmentShader = shaderData.pbrFS;
-		this.lights = true;
+		//this.lights = true;
 
 		// Other
 		if (sourceMaterial.isGLTFSpecularGlossinessMaterial === true) this.initSGWorkflow(sourceMaterial);

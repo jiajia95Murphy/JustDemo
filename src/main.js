@@ -177,7 +177,7 @@ function animate() {
 }
 
 animate(); */
-let camera, controls, scene, renderer;
+let camera, controls, scene, renderer, light;
 
 init();
 //render(); // remove when using next line for animation loop (requestAnimationFrame)
@@ -197,7 +197,7 @@ function init() {
 
   camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 1000 );
   camera.position.set( 400, 200, 0 );
-
+  camera.lookAt(scene.position);
   // controls
 
   controls = new OrbitControls( camera, renderer.domElement );
@@ -219,63 +219,80 @@ function init() {
 // Moon
 // Load Light
 let sunLight = new THREE.DirectionalLight(0xffffff, 1);
-sunLight.castShadow = true;
+
+sunLight.castShadow = false;
 // Load Shader
 let program = new Program();
 let { pbrVS, pbrFS } = program.getPBRShader();
 let shadowDepthRange = new THREE.Vector2(
   sunLight.shadow.camera.near,
   sunLight.shadow.camera.far
-);
+); 
 
 const moonTexture = new THREE.TextureLoader().load('./src/render/texture/T_Treant_Diffuse_Summer.png');
 const normalTexture = new THREE.TextureLoader().load('./src/render/texture/T_Treant_Normal.png');
 const emissiveTexture = new THREE.TextureLoader().load('./src/render/texture/T_Treant_Emissive.png');
 const metalnessTexture = new THREE.TextureLoader().load('./src/render/texture/FlightHelmet_Materials_RubberWoodMat_OcclusionRoughMetal.png');
-const envTexture = new THREE.TextureLoader().load('');
+const envTexture = new THREE.TextureLoader().load('./src/render/environment/hdrs/studio_garden_1k.hdr');
+
 const moon = new THREE.Mesh(
   new THREE.SphereGeometry(30, 32, 32),
   new THREE.MeshStandardMaterial({
-    /* map: moonTexture,
+    map: moonTexture,
     normalMap: normalTexture,
     emissiveMap: emissiveTexture,
-    metalnessMap: metalnessTexture */
+    metalnessMap: metalnessTexture,
+    envMap: envTexture,
   })
 );
-moon.castShadow = true;
 
-/* moon.material = new PBRMaterial(moon, null, {
+moon.material = new PBRMaterial(moon, null, {
   pbrVS,
   pbrFS,
-  //shadowDepthRange
-}); */
-/* let envRotation = 0;
+  shadowDepthRange
+});
+moon.castShadow = true;
+let envRotation = 0;
 let envRotationFromPanel = new THREE.Matrix4().makeRotationY(envRotation);
 let envRotationMat4 = new THREE.Matrix4().copy(envRotationFromPanel);
 moon.material.uniforms.uEnvironmentTransform = { value: new THREE.Matrix3().setFromMatrix4(envRotationMat4) };
 moon.material.uniforms.uEnvBrightness = { value: 1.0 };
-moon.material.defines['DEBUG_BASECOLOR'] = 1;
-moon.material.defines[`DEBUG_METALLIC`] = 0; */
+moon.material.defines['ENABLE_LIGHT'] = 1;
 //moon.material.envMap = null;
 scene.add(moon);
 
-  // lights
 
-  const dirLight1 = new THREE.DirectionalLight( 0xffffff, 1);
-  dirLight1.target.position.set(0, -30, 30);
-  //dirLight1.angle = Math.PI * 0.1;
-  dirLight1.castShadow = true;
-  dirLight1.position.set( 100, 100, 0);
-  //dirLight1.rotateX(30);
-  dirLight1.shadow.camera.near = 0.1;
-  dirLight1.shadow.camera.far = 2000;
-  dirLight1.shadow.bias = - 0.000222;
-  dirLight1.shadow.mapSize.width = 1024;
-  dirLight1.shadow.mapSize.height = 1024;
-  scene.add( dirLight1 );
-  scene.add(dirLight1.target);
-  const dirHelper = new THREE.DirectionalLightHelper( dirLight1, 5 );
-  scene.add( dirHelper );
+  // lights
+  // DirectionalLight
+  light = new THREE.DirectionalLight( 0xffff00, 1);
+  light.target.position.set(0, -30, 30);
+  light.castShadow = true;
+  light.position.set( 100, 100, 0);
+  light.shadow.normalBias = 0;
+  light.shadow.mapSize.width = 1024;
+  light.shadow.mapSize.height = 1024; 
+  scene.add( light );
+  scene.add(light.target);
+  const dirHelper = new THREE.DirectionalLightHelper( light, 5 );
+  scene.add( dirHelper ); 
+
+  // Shadow
+  let frustumSize = 200;
+
+  let shadowCamera = light.shadow.camera = new THREE.OrthographicCamera(
+            -frustumSize / 2,
+            frustumSize / 2,
+            frustumSize / 2,
+            -frustumSize / 2,
+            1,
+            500
+        );
+  shadowCamera.position.copy(light.position);
+  shadowCamera.lookAt(scene.position); 
+  var pars = { minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, format: THREE.RGBAFormat };
+  light.shadow.map = new THREE.WebGLRenderTarget( light.shadow.mapSize.x, light.shadow.mapSize.y, pars );
+  const shadowCameraHelper = new THREE.CameraHelper( shadowCamera );
+  scene.add( shadowCameraHelper );
 
   const spotLight1 = new THREE.SpotLight( 0xff00ff, 1);
   spotLight1.target.position.set(0, 0, 0);

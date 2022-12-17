@@ -74,6 +74,7 @@ varying vec3 vWorldNormal;
 #include <metalnessmap_pars_fragment>
 #include <packing>
 #include <logdepthbuf_pars_fragment>
+#include <shadowmap_pars_fragment>
 
 #preImport <math>
 #preImport <shadow>
@@ -112,14 +113,14 @@ void main(){
     #ifdef SPECULAR_GLOSSINESS
         materialSpecular = specularFactor;
         #ifdef USE_SPECULARMAP
-            materialSpecular = sRGBToLinear(texture2D(specularMap, vUv)).rgb * specularFactor;
+            //materialSpecular = sRGBToLinear(texture2D(specularMap, vUv)).rgb * specularFactor;
         #endif
     #else
         #include <metalnessmap_fragment>
         float f0 = 0.04;
         materialSpecular = mix(vec3(f0), diffuseColor.rgb, metalnessFactor);
         // materialSpecular = 0.16 * reflectance * reflectance * (1.0 - metallic) + baseColor * metallic;
-        materialDiffuse = diffuseColor.rgb * (1.0 - metalnessFactor);
+        //materialDiffuse = diffuseColor.rgb * (1.0 - metalnessFactor);
     #endif
 
     float materialF90 = 1.0;
@@ -248,8 +249,8 @@ void main(){
             // Mobile texture unit too little! 
             #if !defined( MOBILE ) && defined( USE_SHADOWMAP ) && ( UNROLLED_LOOP_INDEX < NUM_DIR_LIGHT_SHADOWS )
             directionalLightShadow = directionalLightShadows[ i ];
-            shadow *= all( bvec2( directionalLight.visible, receiveShadow ) ) ? getShadow( lighted, directionalShadowMap[ i ], directionalLightShadow.shadowMapSize, directionalLightShadow.shadowBias, directionalLightShadow.shadowRadius, vDirectionalShadowCoord[ i ], shadowDistance ) : 1.0;
-            lightDiffuse *= shadow;
+            shadow *= all( bvec2( directionalLight.visible, receiveShadow ) ) ? getShadow(lighted, directionalShadowMap[ i ], directionalLightShadow.shadowMapSize, directionalLightShadow.shadowBias, directionalLightShadow.shadowRadius, vDirectionalShadowCoord[ i ], shadowDistance) : 1.0;
+            lightDiffuse *= 1.;//shadow;
             lightSpecular *= shadow;
             #endif
 
@@ -261,10 +262,10 @@ void main(){
     // Todo: Spot/Point Light
 
     // Test
-    #ifndef ENABLE_IBL
-        diffuseIBL = vec3(0.);
-        specularIBL = vec3(0.);
-    #endif
+    //#ifndef ENABLE_IBL
+    //    diffuseIBL = vec3(0.);
+    //    specularIBL = vec3(0.);
+    //#endif
     #ifndef ENABLE_LIGHT
         resultLightDiffuse = vec3(0.);
         resultLightSpecular = vec3(0.);
@@ -285,6 +286,6 @@ void main(){
 #if defined(DEBUG_ROUGHNESS)
     gl_FragColor = diffuseColor;
 #endif
-    //#include <tonemapping_fragment>
-    //#include <encodings_fragment>
+    #include <tonemapping_fragment>
+    #include <encodings_fragment>
 }
