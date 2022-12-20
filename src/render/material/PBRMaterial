@@ -35,6 +35,7 @@ class PBRMaterial extends THREE.ShaderMaterial {
 		this.uniforms['uShadowDepthRange'] = { value: shaderData.shadowDepthRange };
 		this.uniforms['uModelNormalMatrix'] = { value: this.modelNormalMatrix };
         //this.syncEnvSetting(environment);
+		this.defines[`CUBEMAP_LOD`] = 1;
 		// PBR param sync
 		this.syncParam(sourceMaterial);
 

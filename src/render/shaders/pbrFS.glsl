@@ -154,9 +154,11 @@ void main(){
     // IBL
     float NoV = dot(bentAnisotropicNormal, viewDir);
     vec3 transformedNormal = uEnvironmentTransform * bentAnisotropicNormal;
-    vec3 diffuseIBL = materialDiffuse * computeDiffuseSPH(transformedNormal, uEnvironmentSphericalHarmonics);
+    vec3 diffuseIBL = getIBLRadianceLambertian(transformedNormal, viewDir, materialRoughness, materialDiffuse, 0.04, materialSpecular);
+    //vec3 diffuseIBL = materialDiffuse * computeDiffuseSPH(transformedNormal, uEnvironmentSphericalHarmonics);
     vec3 specularDFG = integrateBRDF(materialSpecular, materialRoughness, NoV);
-    vec3 specularIBL = computeIBLSpecularUE4(specularDFG, bentAnisotropicNormal, viewDir, materialRoughness);
+    vec3 specularIBL = getIBLRadianceGGX(transformedNormal, viewDir, materialRoughness, 0.04, materialSpecular);
+    //vec3 specularIBL = computeIBLSpecularUE4(specularDFG, bentAnisotropicNormal, viewDir, materialRoughness);
     
     // Diffuse AO
     float materialAO = 1.0;

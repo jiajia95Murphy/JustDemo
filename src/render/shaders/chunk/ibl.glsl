@@ -77,3 +77,86 @@ vec3 computeIBLSpecularUE4(vec3 specularDFG, vec3 normal, vec3 viewDir, float ro
     return getPrefilteredEnvMapColor(normal, viewDir, roughness) * specularDFG;
     //return vec3(0, 0, 0);
 }
+// Add from gltf-sampler-view
+ float getFace( vec3 direction ) {
+  vec3 absDirection = abs( direction );
+  float face = - 1.0;
+  if ( absDirection.x > absDirection.z ) {
+   if ( absDirection.x > absDirection.y )
+    face = direction.x > 0.0 ? 0.0 : 3.0;
+   else
+    face = direction.y > 0.0 ? 1.0 : 4.0;
+  } else {
+   if ( absDirection.z > absDirection.y )
+    face = direction.z > 0.0 ? 2.0 : 5.0;
+   else
+    face = direction.y > 0.0 ? 1.0 : 4.0;
+  }
+  return face;
+ }
+ vec2 getUV( vec3 direction, float face ) {
+  vec2 uv;
+  if ( face == 0.0 ) {
+   uv = vec2( direction.z, direction.y ) / abs( direction.x );
+  } else if ( face == 1.0 ) {
+   uv = vec2( - direction.x, - direction.z ) / abs( direction.y );
+  } else if ( face == 2.0 ) {
+   uv = vec2( - direction.x, direction.y ) / abs( direction.z );
+  } else if ( face == 3.0 ) {
+   uv = vec2( - direction.z, direction.y ) / abs( direction.x );
+  } else if ( face == 4.0 ) {
+   uv = vec2( - direction.x, direction.z ) / abs( direction.y );
+  } else {
+   uv = vec2( direction.x, direction.y ) / abs( direction.z );
+  }
+  return 0.5 * ( uv + 1.0 );
+ }
+vec4 getSpecularSample(vec3 reflection, float lod)
+{
+    return textureLod(envMap, reflection, lod);
+}
+
+vec3 getIBLRadianceGGX(vec3 n, vec3 v, float roughness, vec3 F0, float specularWeight)
+{
+    float NdotV = clampedDot(n, v);
+    float lod = 0.0;//roughness * float(u_MipCount - 1);
+    vec3 reflection = normalize(reflect(-v, n));
+
+    vec2 brdfSamplePoint = clamp(vec2(NdotV, roughness), vec2(0.0, 0.0), vec2(1.0, 1.0));
+    //vec2 f_ab = texture(envMap, brdfSamplePoint).rg;
+    vec4 specularSample = getSpecularSample(reflection, lod);
+
+    vec3 specularLight = specularSample.rgb;
+
+    // see https://bruop.github.io/ibl/#single_scattering_results at Single Scattering Results
+    // Roughness dependent fresnel, from Fdez-Aguera
+    vec3 Fr = max(vec3(1.0 - roughness), F0) - F0;
+    vec3 k_S = F0 + Fr * pow(1.0 - NdotV, 5.0);
+    vec3 FssEss = k_S;// * f_ab.x + f_ab.y;
+
+    return specularWeight * specularLight * FssEss;
+}
+
+vec3 getIBLRadianceLambertian(vec3 n, vec3 v, float roughness, vec3 diffuseColor, vec3 F0, float specularWeight)
+{
+    float NdotV = clampedDot(n, v);
+    vec2 brdfSamplePoint = clamp(vec2(NdotV, roughness), vec2(0.0, 0.0), vec2(1.0, 1.0));
+    //vec2 f_ab = texture(envMap, brdfSamplePoint).rg;
+
+    vec3 irradiance = getDiffuseLight(n);
+
+    // see https://bruop.github.io/ibl/#single_scattering_results at Single Scattering Results
+    // Roughness dependent fresnel, from Fdez-Aguera
+
+    vec3 Fr = max(vec3(1.0 - roughness), F0) - F0;
+    vec3 k_S = F0 + Fr * pow(1.0 - NdotV, 5.0);
+    vec3 FssEss = specularWeight * k_S ;//* f_ab.x + f_ab.y; // <--- GGX / specular light contribution (scale it down if the specularWeight is low)
+
+    // Multiple scattering, from Fdez-Aguera
+    float Ems = (1.0 - (f_ab.x + f_ab.y));
+    vec3 F_avg = specularWeight * (F0 + (1.0 - F0) / 21.0);
+    vec3 FmsEms = Ems * FssEss * F_avg / (1.0 - F_avg * Ems);
+    vec3 k_D = diffuseColor * (1.0 - FssEss + FmsEms); // we use +FmsEms as indicated by the formula in the blog post (might be a typo in the implementation)
+
+    return (FmsEms + k_D) * irradiance;
+}

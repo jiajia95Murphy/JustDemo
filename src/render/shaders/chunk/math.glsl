@@ -19,3 +19,8 @@ mat3 rotationMatrix3(vec3 axis, float angle) {
                 oc * axis.y * axis.z + axis.x * s,
                 oc * axis.z * axis.z + c);
 }
+
+float clampedDot(vec3 x, vec3 y)
+{
+    return clamp(dot(x, y), 0.0, 1.0);
+}

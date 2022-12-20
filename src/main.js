@@ -1,6 +1,7 @@
 import './style.css';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import { HDRCubeTextureLoader } from 'three/examples/jsm/loaders/HDRCubeTextureLoader.js';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
 import { PBRMaterial } from './render/material/PBRMaterial';
 import Program from './render/material/Program';
@@ -233,7 +234,14 @@ const moonTexture = new THREE.TextureLoader().load('./src/render/texture/T_Trean
 const normalTexture = new THREE.TextureLoader().load('./src/render/texture/T_Treant_Normal.png');
 const emissiveTexture = new THREE.TextureLoader().load('./src/render/texture/T_Treant_Emissive.png');
 const metalnessTexture = new THREE.TextureLoader().load('./src/render/texture/FlightHelmet_Materials_RubberWoodMat_OcclusionRoughMetal.png');
-const envTexture = new THREE.TextureLoader().load('./src/render/environment/hdrs/studio_garden_1k.hdr');
+//const envTexture = new THREE.TextureLoader().load('./src/render/environment/hdrs/studio_garden_1k.hdr');
+let envTexture;
+new HDRCubeTextureLoader()
+    .setDataType(THREE.UnsignedByteType)
+    .load( './src/render/environment/hdrs/studio_garden_1k.hdr', HDRTexture => {
+
+      envTexture = HDRTexture.clone();
+      envTexture.mapping = THREE.SphericalReflectionMapping;});
 
 const moon = new THREE.Mesh(
   new THREE.SphereGeometry(30, 32, 32),
@@ -245,22 +253,25 @@ const moon = new THREE.Mesh(
     envMap: envTexture,
   })
 );
-
-moon.material = new PBRMaterial(moon, null, {
+//moon.material = new THREE.MeshBasicMaterial();
+moon.material.map = null;
+moon.material.color = new THREE.Color('red');
+moon.material.wireframe = true;
+/* moon.material = new PBRMaterial(moon, null, {
   pbrVS,
   pbrFS,
   shadowDepthRange
-});
+}); */
 moon.castShadow = true;
 let envRotation = 0;
 let envRotationFromPanel = new THREE.Matrix4().makeRotationY(envRotation);
 let envRotationMat4 = new THREE.Matrix4().copy(envRotationFromPanel);
-moon.material.uniforms.uEnvironmentTransform = { value: new THREE.Matrix3().setFromMatrix4(envRotationMat4) };
-moon.material.uniforms.uEnvBrightness = { value: 1.0 };
-moon.material.defines['ENABLE_LIGHT'] = 1;
+//moon.material.uniforms.uEnvironmentTransform = { value: new THREE.Matrix3().setFromMatrix4(envRotationMat4) };
+//moon.material.uniforms.uEnvBrightness = { value: 1.0 };
+//moon.material.defines['ENABLE_LIGHT'] = 1;
+//moon.material.defines['CUBEUV_MAX_MIP'] = 0;
 //moon.material.envMap = null;
 scene.add(moon);
-
 
   // lights
   // DirectionalLight
