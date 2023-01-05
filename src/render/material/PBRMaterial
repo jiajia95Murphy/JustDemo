@@ -20,19 +20,19 @@ class PBRMaterial extends THREE.ShaderMaterial {
 		this.uniforms = THREE.UniformsUtils.merge([
 			UniformsLib.common,
 			UniformsLib.normalmap,
-			//UniformsLib.lightmap,
+			UniformsLib.lightmap,
 			UniformsLib.bumpmap,
 			UniformsLib.roughnessmap,
 			UniformsLib.metalnessmap,
 			UniformsLib.aomap,
 			UniformsLib.emissivemap,
 			UniformsLib.displacementmap,
-			//UniformsLib.envmap,
+			UniformsLib.envmap,
 			UniformsLib.fog,
-			//UniformsLib.lights,
+			UniformsLib.lights,
 			pbrDefaultUniforms
 		]);
-		this.uniforms['uShadowDepthRange'] = { value: shaderData.shadowDepthRange };
+		//this.uniforms['uShadowDepthRange'] = { value: shaderData.shadowDepthRange };
 		this.uniforms['uModelNormalMatrix'] = { value: this.modelNormalMatrix };
         //this.syncEnvSetting(environment);
 		this.defines[`CUBEMAP_LOD`] = 1;

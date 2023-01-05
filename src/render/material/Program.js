@@ -1,6 +1,6 @@
 import ShaderChunk from '../shaders/ShaderChunk';
 import pbrVS from '../shaders/pbrVS.glsl?raw';
-import pbrFS from '../shaders/pbrFS.glsl?raw';
+import pbrFS from '../shaders/MeshStandardFS.glsl?raw';
 
 export default class Program {
 	constructor() {
