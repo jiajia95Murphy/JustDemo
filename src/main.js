@@ -4,16 +4,15 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { HDRCubeTextureLoader } from 'three/examples/jsm/loaders/HDRCubeTextureLoader.js';
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader';
 import { PBRMaterial } from './render/material/PBRMaterial';
-import { GLTFMeshStandardSGMaterial, CustomMeshStandardMaterial } from './render/material/GLTFExtendMaterials';
+import { GLTFMeshStandardSGMaterial, CustomMeshStandardMaterial, CustomBackgroundCubeMaterial } from './render/material/GLTFExtendMaterials';
 import Program from './render/material/Program';
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import { isMobile } from './Utils';
 import { MeshStandardMaterial } from 'three';
-let camera, controls, scene, renderer, light;
+let camera, controls, scene, renderer, light, moon, defaultMoon, backgroundBox, pmremGenerator, lastEnvTexture;
 var params = {
-  envMap: 'HDR',
-  roughness: 0.0,
-  metalness: 0.0,
+  envMap: 'belfast_farmhouse_1k',
+  envMapRotate: 0.0,
   exposure: 1.0,
   debug: false
 };
@@ -35,7 +34,7 @@ async function init() {
   renderer.outputEncoding = THREE.sRGBEncoding;
   document.body.appendChild( renderer.domElement );
 
-  const pmremGenerator = new THREE.PMREMGenerator(renderer); // 使用hdr作为背景色
+  pmremGenerator = new THREE.PMREMGenerator(renderer); // 使用hdr作为背景色
   pmremGenerator.compileEquirectangularShader();
 
   camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 1000 );
@@ -67,52 +66,50 @@ async function init() {
   const normalTexture = new THREE.TextureLoader().load('./src/render/texture/T_Treant_Normal.png');
   const emissiveTexture = new THREE.TextureLoader().load('./src/render/texture/T_Treant_Emissive.png');
   const metalnessTexture = new THREE.TextureLoader().load('./src/render/texture/FlightHelmet_Materials_RubberWoodMat_OcclusionRoughMetal.png');
-  //const envTexture = new THREE.TextureLoader().load('./src/render/environment/hdrs/studio_garden_1k.hdr');
   
-  let envTexture;
-  const loader = new RGBELoader();
-  const texture = await loader.loadAsync('./src/render/environment/hdrs/belfast_farmhouse_1k.hdr');
-  envTexture = pmremGenerator.fromEquirectangular(texture).texture;
-  pmremGenerator.dispose();
-  scene.background = envTexture;
-  const moon = new THREE.Mesh(
+  backgroundBox = new THREE.Mesh(
+    new THREE.BoxGeometry( 1000, 1000, 1000 ),
+    new CustomBackgroundCubeMaterial
+    );
+    backgroundBox.geometry.deleteAttribute( 'normal' );
+    backgroundBox.geometry.deleteAttribute( 'uv' );
+    backgroundBox.onBeforeRender = function ( renderer, scene, camera ) {
+        this.matrixWorld.copyPosition( camera.matrixWorld );
+    };
+  scene.add(backgroundBox);
+  // Set EnvMap
+  lastEnvTexture = 'belfast_farmhouse_1k';
+  let url = './src/render/environment/hdrs/' + lastEnvTexture + '.hdr';
+  loadHDR(url);
+  
+
+  moon = new THREE.Mesh(
     new THREE.SphereGeometry(30, 32, 32),
     new CustomMeshStandardMaterial({
       map: moonTexture,
       normalMap: normalTexture,
       //emissiveMap: emissiveTexture,
       metalnessMap: metalnessTexture,
-      envMap: envTexture,
     })
   );
   moon.material.map.encoding = THREE.sRGBEncoding;
-
   moon.castShadow = true;
-
-  const moon2 = new THREE.Mesh(
+  scene.add(moon);
+  
+  defaultMoon = new THREE.Mesh(
     new THREE.SphereGeometry(30, 32, 32),
     new THREE.MeshStandardMaterial({
       map: moonTexture,
       normalMap: normalTexture,
       //emissiveMap: emissiveTexture,
       metalnessMap: metalnessTexture,
-      envMap: envTexture,
     })
   );
-  moon2.material.map.encoding = THREE.sRGBEncoding;
-  moon2.material.envMap.rotation = new THREE.Euler(0, Math.PI, 0);
-  moon2.castShadow = true;
-  moon2.position.set(moon.position.x, moon.position.y + 130, moon.position.z);
-  scene.add(moon2);
-
-  let envRotation = 0;
-  let envRotationFromPanel = new THREE.Matrix4().makeRotationY(envRotation);
-  let envRotationMat4 = new THREE.Matrix4().copy(envRotationFromPanel);
-  //moon.material.uniforms.uEnvironmentTransform = { value: new THREE.Matrix3().setFromMatrix4(envRotationMat4) };
-  //moon.material.uniforms.uEnvBrightness = { value: 1.0 };
-  //moon.material.defines['ENABLE_LIGHT'] = 1;
-  //moon.material.defines['CUBEUV_MAX_MIP'] = 0;
-  scene.add(moon);
+  defaultMoon.material.map.encoding = THREE.sRGBEncoding;
+  defaultMoon.castShadow = true;
+  defaultMoon.position.set(moon.position.x, moon.position.y + 130, moon.position.z);
+  scene.add(defaultMoon);
+  
   
     // lights
     // DirectionalLight
@@ -177,12 +174,35 @@ const planeGeometry = new THREE.PlaneGeometry( 2000, 2000 );
 
   var gui = new GUI();
 
-		gui.add( params, 'envMap', [ 'LDR', 'HDR', 'RGBM16' ] );
-		gui.add( params, 'roughness', 0, 1, 0.01 );
-		gui.add( params, 'metalness', 0, 1, 0.01 );
+		gui.add( params, 'envMap', [ 'belfast_farmhouse_1k', 'footprint_court', 'studio_country_hall_1k' ] );
+		gui.add( params, 'envMapRotate', 0, 2, 0.01 );
 		gui.add( params, 'exposure', 0, 2, 0.01 );
 		gui.add( params, 'debug', false );
 		gui.open();
+}
+
+async function loadHDR(url) {
+  let envTexture;
+  const loader = new RGBELoader();
+  
+  const texture = await loader.loadAsync(url);
+  envTexture = pmremGenerator.fromEquirectangular(texture).texture;
+  pmremGenerator.dispose();
+
+  const imageHeight = envTexture.image.height;
+  if ( imageHeight === null ) return null;
+  const maxMip = Math.log2( imageHeight ) - 2;
+  const texelHeight = 1.0 / imageHeight;
+  const texelWidth = 1.0 / ( 3 * Math.max( Math.pow( 2, maxMip ), 7 * 16 ) );
+  backgroundBox.material.envMap = envTexture;
+  backgroundBox.material.defines = {
+      'CUBEUV_TEXEL_WIDTH': texelWidth,
+      'CUBEUV_TEXEL_HEIGHT': texelHeight,
+      'CUBEUV_MAX_MIP': `${maxMip}.0`,
+  };
+
+  moon.material.envMap = envTexture;
+  defaultMoon.material.envMap = envTexture;
 }
 
 function onWindowResize() {
@@ -206,5 +226,16 @@ function animate() {
 
 function render() {
   renderer.toneMappingExposure = params.exposure;
+  if (moon !== undefined) {
+    moon.material.envMapRotate = params.envMapRotate * Math.PI;
+  }
+  if (backgroundBox !== undefined) {
+    backgroundBox.material.envMapRotate = params.envMapRotate * Math.PI;
+  }
+  if (lastEnvTexture !== params.envMap) {
+    lastEnvTexture = params.envMap;
+    let url = './src/render/environment/hdrs/' + lastEnvTexture + '.hdr';
+    loadHDR(url);
+  }
   renderer.render( scene, camera );
 }

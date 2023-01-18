@@ -41,6 +41,7 @@ uniform float opacity;
 	#endif
 #endif
 varying vec3 vViewPosition;
+#preImport <math>
 #include <common>
 #include <packing>
 #include <dithering_pars_fragment>
@@ -56,8 +57,8 @@ varying vec3 vViewPosition;
 #include <bsdfs>
 #include <iridescence_fragment>
 #include <cube_uv_reflection_fragment>
-#include <envmap_common_pars_fragment>
-#include <envmap_physical_pars_fragment>
+#preImport <custom_envmap_common_pars_fragment>
+#preImport <custom_envmap_physical_pars_fragment>
 #include <fog_pars_fragment>
 #include <lights_pars_begin>
 #include <normal_pars_fragment>

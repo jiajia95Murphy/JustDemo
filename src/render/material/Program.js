@@ -1,18 +1,18 @@
 import ShaderChunk from '../shaders/ShaderChunk';
-import pbrVS from '../shaders/pbrVS.glsl?raw';
-import pbrFS from '../shaders/MeshStandardFS.glsl?raw';
 
 export default class Program {
-	constructor() {
+	constructor(vertexShader, fragmentShader) {
 		this.includePattern = /^[ \t]*#preImport +<([\w\d./]+)>/gm;
+		this.customVS = vertexShader;
+		this.customFS = fragmentShader;
 	}
 
 	getPBRShader() {
-		let vs = this.preParseShader(pbrVS);
-		let fs = this.preParseShader(pbrFS);
+		let vs = this.preParseShader(this.customVS);
+		let fs = this.preParseShader(this.customFS);
 		return {
-			pbrVS: vs,
-			pbrFS: fs
+			vs,
+			fs
 		};
 	}
 	
@@ -24,6 +24,6 @@ export default class Program {
 			}
 			return this.preParseShader(string);
 		};
-		return string.replace(this.includePattern, includeReplacer);
+		return string?.replace(this.includePattern, includeReplacer);
 	}
 }

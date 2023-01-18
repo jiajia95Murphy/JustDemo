@@ -13,6 +13,12 @@ import ibl from './chunk/ibl.glsl?raw';
 import clearCoat from './chunk/clearCoat.glsl?raw';
 import advance from './chunk/advance.glsl?raw';
 
+import custom_bsdfs from './chunk/custom_bsdfs.glsl?raw';
+import custom_envmap_common_pars_fragment from './chunk/custom_envmap_common_pars_fragment.glsl?raw';
+import custom_envmap_physical_pars_fragment from './chunk/custom_envmap_physical_pars_fragment.glsl?raw';
+import custom_lights_fragment_maps from './chunk/custom_lights_fragment_maps.glsl?raw';
+import custom_lights_physical_pars_fragment from './chunk/custom_lights_physical_pars_fragment.glsl?raw';
+
 export default {
 	computeDiffuseSPH,
 	integrateBRDFMobile,
@@ -27,5 +33,11 @@ export default {
 	brdf,
 	ibl,
 	clearCoat,
-	advance
+	advance,
+
+	custom_bsdfs,
+	custom_lights_fragment_maps,
+	custom_envmap_common_pars_fragment,
+	custom_envmap_physical_pars_fragment,
+	custom_lights_physical_pars_fragment
 };

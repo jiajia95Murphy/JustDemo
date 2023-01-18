@@ -1,14 +1,86 @@
 import * as THREE from 'three';
+import standardVS from '../shaders/pbrVS.glsl?raw';
+import standardFS from '../shaders/MeshStandardFS.glsl?raw';
+import backgroundVS from '../shaders/BackgroundCubeVS.glsl?raw';
+import backgroundFS from '../shaders/BackgroundCubeFS.glsl?raw';
 
-import pbrVS from '../shaders/pbrVS.glsl?raw';
-import pbrFS from '../shaders/MeshStandardFS.glsl?raw';
-class GLTFMeshStandardSGMaterial extends THREE.MeshStandardMaterial {
+import Program from './Program';
+/**
+ * A sub class of StandardMaterial with some of the functionality
+ * changed via the `onBeforeCompile` callback
+ * @pailhead
+ */
+
+class CustomMeshStandardMaterial extends THREE.MeshStandardMaterial {
+
+	constructor( params ) {
+
+		super();
+		
+        this.program = new Program(standardVS, standardFS);
+		let {vs, fs} = this.program.getPBRShader();
+		this.fragShader = fs;
+		const uniforms = {
+			envMapRotate: { value: 0 }
+		};
+
+		this._extraUniforms = uniforms;
+		this.onBeforeCompile = function ( shader ) {
+			for ( const uniformName in uniforms ) {
+
+				shader.uniforms[ uniformName ] = uniforms[ uniformName ];
+
+			}
+			shader.fragmentShader = this.fragShader;
+		};
+		Object.defineProperties( this, {
+
+			envMapRotate: {
+				get: function () {
+
+					return uniforms.envMapRotate.value;
+
+				},
+				set: function ( v ) {
+
+					uniforms.envMapRotate.value = v;
+
+				}
+			}
+
+		} );
+		this.setValues( params );
+	}
+
+	copy( source ) {
+
+		super.copy( source );
+
+		if (this.specularMap !== undefined) {
+			this.specularMap = source.specularMap;
+			this.specular.copy( source.specular );
+			delete this.metalnessMap;
+			delete this.metalness;
+		}
+		
+		if (this.glossinessMap !== undefined) {
+			this.glossinessMap = source.glossinessMap;
+			this.glossiness = source.glossiness;
+			delete this.roughness;
+			delete this.roughnessMap;
+		}
+		return this;
+
+	}
+
+}
+class GLTFMeshStandardSGMaterial extends CustomMeshStandardMaterial {
 
 	constructor( params ) {
 
 		super();
 
-		//this.isGLTFSpecularGlossinessMaterial = true;
+		this.isGLTFSpecularGlossinessMaterial = true;
 
 		//various chunks that need replacing
 		const specularMapParsFragmentChunk = [
@@ -27,9 +99,8 @@ class GLTFMeshStandardSGMaterial extends THREE.MeshStandardMaterial {
 			'vec3 specularFactor = specular;',
 			'#ifdef USE_SPECULARMAP',
 			'	vec4 texelSpecular = texture2D( specularMap, vUv );',
-			'	texelSpecular = vec4( mix( pow( texelSpecular.rgb * 0.9478672986 + vec3( 0.0521327014 ), vec3( 2.4 ) ), texelSpecular.rgb * 0.0773993808, vec3( lessThanEqual( texelSpecular.rgb, vec3( 0.04045 ) ) ) ), texelSpecular.a );',
-			'   //texelSpecular = sRGBToLinear(texelSpecular);',
-            '	// reads channel RGB, compatible with a glTF Specular-Glossiness (RGBA) texture',
+			'	// reads channel RGB, compatible with a glTF Specular-Glossiness (RGBA) texture',
+			'   texelSpecular.rgb = pow( texelSpecular.rgb, vec3(0.7));',
 			'	specularFactor *= texelSpecular.rgb;',
 			'#endif'
 		].join( '\n' );
@@ -39,13 +110,15 @@ class GLTFMeshStandardSGMaterial extends THREE.MeshStandardMaterial {
 			'#ifdef USE_GLOSSINESSMAP',
 			'	vec4 texelGlossiness = texture2D( glossinessMap, vUv );',
 			'	// reads channel A, compatible with a glTF Specular-Glossiness (RGBA) texture',
-			'	glossinessFactor *= texelGlossiness.a;',
+			'	glossinessFactor *= mix( pow( texelGlossiness.a, 0.41666) * 1.055 - 0.055, texelGlossiness.a * 12.92, texelGlossiness.a <= 0.0031308 ? 1. : 0.);',
+			'	//glossinessFactor *= texelGlossiness.a;',
 			'#endif'
 		].join( '\n' );
 
 		const lightPhysicalFragmentChunk = [
 			'PhysicalMaterial material;',
-			'material.diffuseColor = diffuseColor.rgb * ( 1. - max( specularFactor.r, max( specularFactor.g, specularFactor.b ) ) );',
+			'//material.diffuseColor = diffuseColor.rgb * ( 1. - max( specularFactor.r, max( specularFactor.g, specularFactor.b ) ) );',
+			'material.diffuseColor = diffuseColor.rgb * ( vec3(1.) - specularFactor);',
 			'vec3 dxy = max( abs( dFdx( geometryNormal ) ), abs( dFdy( geometryNormal ) ) );',
 			'float geometryRoughness = max( max( dxy.x, dxy.y ), dxy.z );',
 			'material.roughness = max( 1.0 - glossinessFactor, 0.0525 ); // 0.0525 corresponds to the base mip of a 256 cubemap.',
@@ -65,13 +138,14 @@ class GLTFMeshStandardSGMaterial extends THREE.MeshStandardMaterial {
 
 		this.onBeforeCompile = function ( shader ) {
 
+			//THREE.Material.prototype.onBeforeCompile.call(this);
 			for ( const uniformName in uniforms ) {
 
 				shader.uniforms[ uniformName ] = uniforms[ uniformName ];
 
 			}
 
-			shader.fragmentShader = shader.fragmentShader
+			shader.fragmentShader = this.fragShader
 				.replace( 'uniform float roughness;', 'uniform vec3 specular;' )
 				.replace( 'uniform float metalness;', 'uniform float glossiness;' )
 				.replace( '#include <roughnessmap_pars_fragment>', specularMapParsFragmentChunk )
@@ -79,6 +153,9 @@ class GLTFMeshStandardSGMaterial extends THREE.MeshStandardMaterial {
 				.replace( '#include <roughnessmap_fragment>', specularMapFragmentChunk )
 				.replace( '#include <metalnessmap_fragment>', glossinessMapFragmentChunk )
 				.replace( '#include <lights_physical_fragment>', lightPhysicalFragmentChunk );
+
+			//console.log(shader.fragmentShader);
+
 		};
 
 		Object.defineProperties( this, {
@@ -185,22 +262,108 @@ class GLTFMeshStandardSGMaterial extends THREE.MeshStandardMaterial {
 	}
 
 }
-class CustomMeshStandardMaterial extends THREE.MeshStandardMaterial {
-
+class CustomBackgroundCubeMaterial extends THREE.ShaderMaterial {
 	constructor( params ) {
 
 		super();
-
-        this.program = null;
-		this.onBeforeCompile = function ( shader ) {
-
-            shader.vertexShader = pbrVS;
-			shader.fragmentShader = pbrFS;
+		
+        this.program = new Program(backgroundVS, backgroundFS);
+		let {vs, fs} = this.program.getPBRShader();
+		this.vertShader = vs;
+		this.fragShader = fs;
+		const uniforms = {
+			envMap: { value: null },
+			envMapRotate: {value: 0},
+			flipEnvMap: {value: 1},
+			backgroundBlurriness: {value: 0},
+			backgroundIntensity: {value: 1},
 		};
 
-		this.setValues( params );
+		this._extraUniforms = uniforms;
+		this.defines = {
+			'n': 20,
+			'CUBEUV_TEXEL_WIDTH': 1.0 / 2,
+			'CUBEUV_TEXEL_HEIGHT': 1.0 / 2,
+			'CUBEUV_MAX_MIP': `${4}.0`,
+		};
+		this.side = THREE.BackSide;
+		this.fog = false;
+		this.depthTest = false;
+		this.depthWrite = false;
+		this.onBeforeCompile = function ( shader ) {
+			for ( const uniformName in uniforms ) {
 
+				shader.uniforms[ uniformName ] = uniforms[ uniformName ];
+
+			}
+			shader.vertexShader = this.vertShader;
+			shader.fragmentShader = this.fragShader;
+		};
+		Object.defineProperties( this, {
+			envMap: {
+				get: function () {
+
+					return uniforms.envMap.value;
+
+				},
+				set: function ( v ) {
+
+					uniforms.envMap.value = v;
+
+				}
+			},
+			envMapRotate: {
+				get: function () {
+
+					return uniforms.envMapRotate.value;
+
+				},
+				set: function ( v ) {
+
+					uniforms.envMapRotate.value = v;
+
+				}
+			},
+			height: {
+				get: function () {
+
+					return uniforms.height.value;
+
+				},
+				set: function ( v ) {
+
+					uniforms.height.value = v;
+
+				}
+			},
+			radius: {
+				get: function () {
+
+					return uniforms.radius.value;
+
+				},
+				set: function ( v ) {
+
+					uniforms.radius.value = v;
+
+				}
+			}
+
+		} );
+		this.setValues( params );
 	}
 
+	copy( source ) {
+
+		super.copy( source );
+
+		if (this.envMap !== undefined) {
+			this.envMap = source.envMap;
+			this.envMapRotate.copy( source.envMapRotate );
+		}
+		
+		return this;
+
+	}
 }
-export { GLTFMeshStandardSGMaterial, CustomMeshStandardMaterial };
+export { GLTFMeshStandardSGMaterial, CustomMeshStandardMaterial, CustomBackgroundCubeMaterial };
