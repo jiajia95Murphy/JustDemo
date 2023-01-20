@@ -66,20 +66,20 @@ float D_GGX( const in float alpha, const in float dotNH ) {
 
 // Anisotropic GGX
 // [Burley 2012, "Physically-Based Shading at Disney"]
-float D_GGXaniso( float roughness, float NoH, vec3 H, vec3 X, vec3 Y )
+float D_GGXaniso( float roughness, float NoH, vec3 H, vec3 tangent, vec3 bitangent )
 {
     float K_aniso = 0.7;//TODO: Anisotropy;
     float K_aspect = sqrt(1.0f - 0.9f * K_aniso);//DIsney这里是0.9，UE4这里是0.95
 	float ax = max(roughness * roughness / K_aspect, 0.001f);
     float ay = max(roughness * roughness * K_aspect, 0.001f);
-	float XoH = dot( X, H );
-	float YoH = dot( Y, H );
+	float XoH = dot( tangent, H );
+	float YoH = dot( bitangent, H );
 	float d = XoH*XoH / (ax*ax) + YoH*YoH / (ay*ay) + NoH*NoH;
 	return 1. / ( PI * ax*ay * d*d );
 }
 
 // GGX Distribution, Schlick Fresnel, GGX_SmithCorrelated Visibility
-vec3 BRDF_GGX( const in vec3 lightDir, const in vec3 viewDir, const in vec3 normal, const in vec3 f0, const in float f90, const in float roughness ) {
+vec3 BRDF_GGX( const in vec3 lightDir, const in vec3 viewDir, const in vec3 normal, const in vec3 f0, const in float f90, const in float roughness, const in vec2 vUv ) {
 
 	float alpha = pow2( roughness ); // UE4's roughness
 
@@ -90,17 +90,33 @@ vec3 BRDF_GGX( const in vec3 lightDir, const in vec3 viewDir, const in vec3 norm
 	float dotNH = saturate( dot( normal, halfDir ) );
 	float dotVH = saturate( dot( viewDir, halfDir ) );
 
-    // Temp
-    vec3 tangent = vec3(1., 0., 0.);
-    vec3 bitangent = cross(normal, tangent);
 	vec3 F = F_Schlick( f0, f90, dotVH );
 
 	float V = V_GGX_SmithCorrelated( alpha, dotNL, dotNV );
-    float D = D_GGXaniso(roughness, dotNH, halfDir, tangent, bitangent);
     #ifdef USE_ANISOTROPY
-        //float D = D_GGXaniso(roughness, dotNH, halfDir, vTangent, vBitangent);
+        #ifndef USE_TANGENT
+            vec3 transformedTangent = ( viewMatrix * vec4( 1., 0., 0., 0.0 ) ).xyz;
+            #ifdef FLIP_SIDED
+	    	    transformedTangent = - transformedTangent;
+	        #endif
+            vec3 tangent = normalize(transformedTangent);
+        #endif
+        
+        vec3 bitangent = cross(normal, tangent);
+        #ifdef USE_ANISOMAP
+            vec2 rot2 = texture2D(anisoMap, vUv).rg * 2. - 1.;
+            rot2 = normalize(rot2);
+            vec3 anisotropicT = (tangent * rot2.x + bitangent * rot2.y);
+        #else
+            float rot = saturate(anisoFactor);
+            rot = rot * 2. * PI;
+            vec3 anisotropicT = (tangent * sin(rot) + bitangent * cos(rot));
+        #endif
+
+        vec3 anisotropicB = normalize(cross(normal, anisotropicT));
+        float D = D_GGXaniso(roughness, dotNH, halfDir, anisotropicT, anisotropicB);
     #else
-	    //float D = D_GGX( alpha, dotNH );
+	    float D = D_GGX( alpha, dotNH );
     #endif
 	return F * ( V * D );
 

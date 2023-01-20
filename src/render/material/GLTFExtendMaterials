@@ -21,7 +21,10 @@ class CustomMeshStandardMaterial extends THREE.MeshStandardMaterial {
 		let {vs, fs} = this.program.getPBRShader();
 		this.fragShader = fs;
 		const uniforms = {
-			envMapRotate: { value: 0 }
+			envMapRotate: { value: 0 },
+			anisoIntensity: { value: 1},
+			anisoFactor: { value: 0},
+			anisoMap: { value: null}
 		};
 
 		this._extraUniforms = uniforms;
@@ -46,7 +49,53 @@ class CustomMeshStandardMaterial extends THREE.MeshStandardMaterial {
 					uniforms.envMapRotate.value = v;
 
 				}
-			}
+			},
+			anisoIntensity: {
+				get: function () {
+
+					return uniforms.anisoIntensity.value;
+
+				},
+				set: function ( v ) {
+
+					uniforms.anisoIntensity.value = v;
+
+				}
+			},
+			anisoFactor: {
+				get: function () {
+
+					return uniforms.anisoFactor.value;
+
+				},
+				set: function ( v ) {
+
+					uniforms.anisoFactor.value = v;
+
+				}
+			},
+			anisoMap: {
+				get: function () {
+
+					return uniforms.anisoMap.value;
+
+				},
+				set: function ( v ) {
+
+					uniforms.anisoMap.value = v;
+
+					if ( v ) {
+
+						this.defines.USE_ANISOMAP = '';
+
+					} else {
+
+						delete this.defines.USE_ANISOMAP;
+
+					}
+
+				}
+			},
 
 		} );
 		this.setValues( params );

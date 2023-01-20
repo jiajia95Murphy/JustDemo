@@ -20,10 +20,10 @@
 
 #if defined( USE_ENVMAP ) && defined( RE_IndirectSpecular )
 
+    vec3 iblN = geometry.normal;
+	float iblRoughness = material.roughness;
 	#if defined(USE_ANISOTROPY)
-		vec3 iblN;
-		vec3 iblRoughness;
-		
+		//ModifyGGXAnisotropicNormalRoughness(geometry.tangent, geometry.normal, anisoIntensity, geometry.viewDir, iblRoughness, iblN);
 	#endif
 	radiance += getIBLRadiance( geometry.viewDir, geometry.normal, material.roughness );
 

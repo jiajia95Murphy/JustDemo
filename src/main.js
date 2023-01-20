@@ -63,6 +63,7 @@ async function init() {
   ); 
   
   const moonTexture = new THREE.TextureLoader().load('./src/render/texture/moon.jpg');
+  const anisotropyTexture = new THREE.TextureLoader().load('./src/render/texture/anisotropy.jpg');
   const normalTexture = new THREE.TextureLoader().load('./src/render/texture/T_Treant_Normal.png');
   const emissiveTexture = new THREE.TextureLoader().load('./src/render/texture/T_Treant_Emissive.png');
   const metalnessTexture = new THREE.TextureLoader().load('./src/render/texture/FlightHelmet_Materials_RubberWoodMat_OcclusionRoughMetal.png');
@@ -86,13 +87,16 @@ async function init() {
   moon = new THREE.Mesh(
     new THREE.SphereGeometry(30, 32, 32),
     new CustomMeshStandardMaterial({
+      color: 0x000000,
       map: moonTexture,
-      normalMap: normalTexture,
-      //emissiveMap: emissiveTexture,
-      metalnessMap: metalnessTexture,
+      //normalMap: normalTexture,
+      anisoMap: anisotropyTexture,
+      //metalnessMap: metalnessTexture,
     })
   );
+  moon.material.defines["USE_ANISOTROPY"] = 1;
   moon.material.map.encoding = THREE.sRGBEncoding;
+  moon.material.anisoMap.encoding = THREE.sRGBEncoding;
   moon.castShadow = true;
   scene.add(moon);
   
@@ -120,7 +124,7 @@ async function init() {
   light.shadow.normalBias = 0;
   light.shadow.mapSize.width = 1024;
   light.shadow.mapSize.height = 1024; 
-  //scene.add( light );
+  scene.add( light );
   scene.add(light.target);
   const dirHelper = new THREE.DirectionalLightHelper( light, 5 );
   scene.add( dirHelper ); 

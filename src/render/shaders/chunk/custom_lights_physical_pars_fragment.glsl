@@ -62,20 +62,21 @@ float IBLSheenBRDF( const in vec3 normal, const in vec3 viewDir, const in float 
 
 }
 
-void ModifyGGXAnisotropicNormalRoughness(const in vec3 vTangent, const in float Anisotropy, vec3 V, inout float Roughness, inout vec3 N)
+void ModifyGGXAnisotropicNormalRoughness(const in vec3 tangent, const in vec3 normal, const in float anisoIndensity, vec3 viewDir, inout float iblRoughness, inout vec3 iblN)
 {
-	if (abs(Anisotropy) > 0.0f)
+    float anisotropy = 0.7;
+	if (abs(anisotropy) > 0.0f)
 	{
-		vec3 X = vTangent;
-		vec3 Y = normalize(cross(N, X));
+		vec3 X = tangent;
+		vec3 Y = normalize(cross(normal, X));
 
-		vec3 AnisotropicDir = Anisotropy >= 0.0f ? Y : X;
-		vec3 AnisotropicT   = cross(AnisotropicDir, V); 
+		vec3 AnisotropicDir = anisotropy >= 0.0f ? Y : X;
+		vec3 AnisotropicT   = cross(AnisotropicDir, viewDir); 
 		vec3 AnisotropicN   = cross(AnisotropicT, AnisotropicDir);
 
-		float AnisotropicStretch = abs(Anisotropy) * saturate(5.0f * Roughness);
-		N = normalize( mix(N, AnisotropicN, AnisotropicStretch));
-		Roughness *= saturate(1.2f - abs(Anisotropy));
+		float AnisotropicStretch = abs(anisotropy) * saturate(anisoIndensity * roughness);
+		iblN = normalize( mix(normal, AnisotropicN, AnisotropicStretch));
+		iblRoughness *= saturate(1.2f - abs(anisotropy));
 	}
 }
 
@@ -130,11 +131,7 @@ void computeMultiscattering( const in vec3 normal, const in vec3 viewDir, const 
 
 	#endif
 
-    #ifdef USE_ANISOTROPY
-        vec3 FssEss = 0;
-    #else
-        vec3 FssEss = Fr * fab.x + specularF90 * fab.y;
-    #endif
+    vec3 FssEss = Fr * fab.x + specularF90 * fab.y;
 
 	float Ess = fab.x + fab.y;
 	float Ems = 1.0 - Ess;
@@ -201,7 +198,7 @@ void RE_Direct_Physical( const in IncidentLight directLight, const in GeometricC
 
 		vec3 ccIrradiance = dotNLcc * directLight.color;
 
-		clearcoatSpecular += ccIrradiance * BRDF_GGX( directLight.direction, geometry.viewDir, geometry.clearcoatNormal, material.clearcoatF0, material.clearcoatF90, material.clearcoatRoughness );
+		clearcoatSpecular += ccIrradiance * BRDF_GGX( directLight.direction, geometry.viewDir, geometry.clearcoatNormal, material.clearcoatF0, material.clearcoatF90, material.clearcoatRoughness, geometry.uv );
 
 	#endif
 
@@ -217,7 +214,7 @@ void RE_Direct_Physical( const in IncidentLight directLight, const in GeometricC
 
 	#else
 
-		reflectedLight.directSpecular += irradiance * BRDF_GGX( directLight.direction, geometry.viewDir, geometry.normal, material.specularColor, material.specularF90, material.roughness );
+		reflectedLight.directSpecular += irradiance * BRDF_GGX( directLight.direction, geometry.viewDir, geometry.normal, material.specularColor, material.specularF90, material.roughness, geometry.uv );
 
 	#endif
 
@@ -232,15 +229,6 @@ void RE_IndirectDiffuse_Physical( const in vec3 irradiance, const in GeometricCo
 
 void RE_IndirectSpecular_Physical( const in vec3 radiance, const in vec3 irradiance, const in vec3 clearcoatRadiance, const in GeometricContext geometry, const in PhysicalMaterial material, inout ReflectedLight reflectedLight) {
 
-    #ifdef USE_ANISOTROPY
-        #ifdef ANISOTROPIC_DIRECTIONMAP
-            vec3 mapV = texture(anisoDirMap, vUv).xyz * 2.0 - 1.;
-
-            vec3 tangent = perturbNormal2Arb()
-        #else
-            
-        #endif
-    #endif
 	#ifdef USE_CLEARCOAT
 
 		clearcoatSpecular += clearcoatRadiance * EnvironmentBRDF( geometry.clearcoatNormal, geometry.viewDir, material.clearcoatF0, material.clearcoatF90, material.clearcoatRoughness );
