@@ -42,19 +42,20 @@ uniform float opacity;
 #endif
 varying vec3 vViewPosition;
 #preImport <math>
-#include <common>
+#preImport <custom_common>
 #include <packing>
 #include <dithering_pars_fragment>
 #include <color_pars_fragment>
 #include <uv_pars_fragment>
 #include <uv2_pars_fragment>
 #include <map_pars_fragment>
+#preImport <custom_anisomap_common_pars_fragment>
 #include <alphamap_pars_fragment>
 #include <alphatest_pars_fragment>
 #include <aomap_pars_fragment>
 #include <lightmap_pars_fragment>
 #include <emissivemap_pars_fragment>
-#include <bsdfs>
+#preImport <custom_bsdfs>
 #include <iridescence_fragment>
 #include <cube_uv_reflection_fragment>
 #preImport <custom_envmap_common_pars_fragment>
@@ -62,7 +63,7 @@ varying vec3 vViewPosition;
 #include <fog_pars_fragment>
 #include <lights_pars_begin>
 #include <normal_pars_fragment>
-#include <lights_physical_pars_fragment>
+#preImport <custom_lights_physical_pars_fragment>
 #include <transmission_pars_fragment>
 #include <shadowmap_pars_fragment>
 #include <bumpmap_pars_fragment>
@@ -91,8 +92,8 @@ void main() {
 	#include <clearcoat_normal_fragment_maps>
 	#include <emissivemap_fragment>
 	#include <lights_physical_fragment>
-	#include <lights_fragment_begin>
-	#include <lights_fragment_maps>
+	#preImport <custom_lights_fragment_begin>
+	#preImport <custom_lights_fragment_maps>
 	#include <lights_fragment_end>
 	#include <aomap_fragment>
 	vec3 totalDiffuse = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse;

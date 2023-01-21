@@ -39,13 +39,13 @@ export default {
 	clearCoat,
 	advance,
 
-	//custom_anisomap_common_pars_fragment,
+	custom_anisomap_common_pars_fragment,
 	custom_bsdfs,
-	//custom_common,
-	//custom_lights_fragment_begin,
-	//custom_lights_fragment_maps,
+	custom_common,
+	custom_lights_fragment_begin,
+	custom_lights_fragment_maps,
 	custom_envmap_common_pars_fragment,
 	custom_envmap_physical_pars_fragment,
-	//custom_lights_physical_pars_fragment,
-	//custom_normal_fragment_begin
+	custom_lights_physical_pars_fragment,
+	custom_normal_fragment_begin
 };

@@ -91,10 +91,12 @@ async function init() {
       map: moonTexture,
       //normalMap: normalTexture,
       anisoMap: anisotropyTexture,
+      metalness: 1,
+      roughness: 0.5,
       //metalnessMap: metalnessTexture,
     })
   );
-  moon.material.defines["USE_ANISOTROPY"] = 1;
+  //moon.material.defines["USE_ANISOTROPY"] = 1;
   moon.material.map.encoding = THREE.sRGBEncoding;
   moon.material.anisoMap.encoding = THREE.sRGBEncoding;
   moon.castShadow = true;

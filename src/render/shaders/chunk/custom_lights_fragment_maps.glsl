@@ -23,9 +23,9 @@
     vec3 iblN = geometry.normal;
 	float iblRoughness = material.roughness;
 	#if defined(USE_ANISOTROPY)
-		//ModifyGGXAnisotropicNormalRoughness(geometry.tangent, geometry.normal, anisoIntensity, geometry.viewDir, iblRoughness, iblN);
+		ModifyGGXAnisotropicNormalRoughness(geometry.tangent, geometry.normal, anisoIntensity, geometry.viewDir, iblRoughness, iblN);
 	#endif
-	radiance += getIBLRadiance( geometry.viewDir, geometry.normal, material.roughness );
+	radiance += getIBLRadiance( geometry.viewDir, iblN, iblRoughness );
 
 	#ifdef USE_CLEARCOAT
 
